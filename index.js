@@ -3,14 +3,10 @@ const app = express();
 
 const { config } = require('./config/index');
 
-app.get('/', function(req, res) {
-  res.send('hello world');
-});
+const moviesApi = require('./router/movies');
 
-app.get('/json', function(req, res) {
-  res.json({ hello: 'world'});
-});
+moviesApi(app);
 
-app.listen(config.port, function () {
-  console.log(`listening http://localhost:${config.port}`)
-})
+app.listen(config.port, function() {
+  console.log(`listening http://localhost:${config.port}`);
+});
