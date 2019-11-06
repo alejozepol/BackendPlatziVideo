@@ -11,7 +11,7 @@ const validationHandlers = require('../utils/middlewere/validationHandlers')
 
 const cacheResponse = require('../utils/cacheResponse');
 const { FIVE_MINUTES_IN_SECUNDS, 
-  SEXTY_MINUTES_IN_SECUNDS } = require('../utils/time')
+  SEXTY_MINUTES_IN_SECUNDS } = require('../utils/time');
 
 function moviesApi(app) {
   const router = express.Router();
