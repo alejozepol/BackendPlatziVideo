@@ -1,16 +1,24 @@
 const express = require('express');
+const passport = require('passport');
 const UserMoviesService = require('../Services/userMovies');
 const validationHandler = require('../utils/middlewere/validationHandlers');
 const { movieIdSchema } = require('../utils/schemas/movies');
 const { userIdSchema } = require('../utils/schemas/user');
 const { createUserMovieSchema } = require('../utils/schemas/userMovies');
 
+//JWT strategy
+
+require('../utils/auth/strategies/jwt');
+
 function userMovieApi(app) {
   const router = express.Router();
   app.use('api/user-movies', router);
   const userMoviesService = new UserMoviesService();
 
-  router.get('/', validationHandler({ userId: userIdSchema }, 'query'),
+  router.get(
+    '/',
+    passport.authenticate('jwt', { session: false }),
+    validationHandler({ userId: userIdSchema }, 'query'),
     async function (req, res, next) {
       const { userId } = req.query;
 
@@ -27,8 +35,12 @@ function userMovieApi(app) {
       }
     });
 
-    router.post('/', validationHandler(createUserMovieSchema), async function(req, res, next){
-      const {body: userMovie} = req;
+  router.post(
+    '/',
+    passport.authenticate('jwt', { session: false }),
+    validationHandler(createUserMovieSchema),
+    async function (req, res, next) {
+      const { body: userMovie } = req;
 
       try {
         const createdUserMovieId = await userMoviesService.CreateUserMovies({
@@ -43,22 +55,23 @@ function userMovieApi(app) {
       }
     })
 
-    router.delete(
-      '/:userMovieId',
-      validationHandler({userMovieId: movieIdSchema}, 'params'),
-      async function(req, res, next){
-       const {userMovieId} = req.params
-       try {
-         const deleteUserMovieId = await userMoviesService.deleteUserMovies({userMovieId});
-         res.status(200).json({
-           data: deleteUserMovieId,
-           message: 'user movie deleted'
-         })
-       } catch (error) {
-         next(error)
-       }
+  router.delete(
+    '/:userMovieId',
+    passport.authenticate('jwt', { session: false }),
+    validationHandler({ userMovieId: movieIdSchema }, 'params'),
+    async function (req, res, next) {
+      const { userMovieId } = req.params
+      try {
+        const deleteUserMovieId = await userMoviesService.deleteUserMovies({ userMovieId });
+        res.status(200).json({
+          data: deleteUserMovieId,
+          message: 'user movie deleted'
+        })
+      } catch (error) {
+        next(error)
       }
-    )
+    }
+  )
 }
 
 module.exports = userMovieApi;
