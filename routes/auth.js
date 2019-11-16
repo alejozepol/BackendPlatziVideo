@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const ApiKeyService = require('../Services/apiKeys');
 const UsersServices = require('../Services/user');
 const validationHandler = require('../utils/middlewere/validationHandlers');
-const { createUserSchema } = require('../utils/schemas/user');
+const { createUserSchema, createProviderUserSchema } = require('../utils/schemas/user');
 
 const { config } = require('../config');
 
@@ -78,13 +78,57 @@ function authApi(app) {
         const createUserId = await usersServices.createUser({ user });
         res.status(201).json({
           data: createUserId,
-          message: 'user created' 
+          message: 'user created'
         })
       } catch (error) {
         next(error)
       }
     }
   )
+
+  router.post(
+    '/sign-provider',
+    validationHandler(createProviderUserSchema),
+    async function (req, res, next) {
+      const { body } = req;
+
+      const { apiKeyToken, ...user } = body;
+
+      if (!apiKeyToken) {
+        next(boom.unauthorized('apiKeyToken is requered'))
+      }
+
+      try {
+        const queredUser = await usersServices.getOrCreateUser({ user });
+        const apiKey = await apiKeyService.getApiKey({ token: apiKeyToken });
+
+        if (!apiKey) {
+          next(boom.unauthorized());
+        }
+        const { _id: id, name, email } = queredUser;
+
+        const payload = {
+          sub: id,
+          name,
+          email,
+          scopes: apiKey.scopes
+        }
+
+        const token = jwt.sign(payload, config.authJwtSecret,{
+          expiresIn: '15m'
+        })
+
+        return res.status(200).json({
+          token,
+          user: {id, name, email}
+        })
+
+      } catch (error) {
+        next(error)
+      }
+
+    })
+
 }
 
 module.exports = authApi;

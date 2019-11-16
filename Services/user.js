@@ -2,18 +2,18 @@ const MongoLib = require('../lib/mongo');
 const bcrypt = require('bcrypt');
 
 class UserService {
-  constructor(){
-    this.collection ='users';
+  constructor() {
+    this.collection = 'users';
     this.mongoDB = new MongoLib()
   }
 
-  async getUser({email}){
-    const [user] = await this.mongoDB.getAll(this.collection, {email})
+  async getUser({ email }) {
+    const [user] = await this.mongoDB.getAll(this.collection, { email })
     return user
   }
 
-  async createUser({ user }){
-    const {name, email, password} = user;
+  async createUser({ user }) {
+    const { name, email, password } = user;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const createUserId = await this.mongoDB.create(this.collection, {
@@ -25,6 +25,18 @@ class UserService {
     return createUserId;
 
   }
+
+  async getOrCreateUser({ user }) {
+    const queruedUser = await this.getUser({ email: user.email })
+
+    if (queruedUser) {
+      return queruedUser;
+    }
+
+    await this.createUser({ user });
+      return await this.getUser({ email: user.email });
+    }
+
 
 
 }
